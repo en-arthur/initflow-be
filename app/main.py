@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import auth, projects, specs, files, agents, chat, marketplace, subscription
+from app.routers import auth, projects, specs, files, agents, chat, marketplace, subscription, status
 
 app = FastAPI(
     title="Spec-Driven AI App Builder API",
@@ -27,6 +27,7 @@ app.include_router(agents.router, prefix="/api/projects/{project_id}", tags=["Ag
 app.include_router(chat.router, prefix="/api/projects/{project_id}/chat", tags=["Chat"])
 app.include_router(marketplace.router, prefix="/api/marketplace", tags=["Marketplace"])
 app.include_router(subscription.router, prefix="/api/subscription", tags=["Subscription"])
+app.include_router(status.router, prefix="/api", tags=["Status"])
 
 
 @app.get("/")

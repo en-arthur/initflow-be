@@ -63,40 +63,15 @@ async def create_project(
     
     check_tier_limits(current_user, len(projects_response.data))
     
-    # Create project
-    project_id = str(uuid.uuid4())
-    new_project = {
-        "id": project_id,
-        "user_id": current_user.id,
-        "name": project_data.name,
-        "description": project_data.description,
-        "status": "draft",
-        "tier": current_user.tier,
-    }
+    # Use service to create project
+    from app.services.project_service import project_service
+    project_data_dict = await project_service.create_project(
+        current_user, 
+        project_data.name, 
+        project_data.description
+    )
     
-    response = supabase.table("projects").insert(new_project).execute()
-    
-    if not response.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create project"
-        )
-    
-    # Initialize spec files
-    spec_types = ["design", "requirements", "tasks"]
-    for spec_type in spec_types:
-        spec_id = str(uuid.uuid4())
-        spec_data = {
-            "id": spec_id,
-            "project_id": project_id,
-            "file_type": spec_type,
-            "content": f"# {spec_type.capitalize()}\n\nYour {spec_type} will be generated here...",
-            "version": 1,
-            "created_by": current_user.id,
-        }
-        supabase.table("spec_files").insert(spec_data).execute()
-    
-    return Project(**response.data[0])
+    return Project(**project_data_dict)
 
 
 @router.put("/{project_id}", response_model=Project)
