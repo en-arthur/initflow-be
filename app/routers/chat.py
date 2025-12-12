@@ -38,6 +38,7 @@ async def send_message(
     # Store user message
     import uuid
     from datetime import datetime
+    from app.services.memory_service import memory_service
     
     user_message_id = str(uuid.uuid4())
     user_message_data = {
@@ -50,7 +51,10 @@ async def send_message(
     
     supabase.table("chat_messages").insert(user_message_data).execute()
     
-    # Generate AI response (simplified for now)
+    # Store in memory
+    await memory_service.store_conversation(project_id, "user", message.message)
+    
+    # Generate AI response with context
     ai_response = await generate_ai_response(message.message, project_id)
     
     # Store AI message
@@ -64,6 +68,9 @@ async def send_message(
     }
     
     ai_message_response = supabase.table("chat_messages").insert(ai_message_data).execute()
+    
+    # Store AI response in memory
+    await memory_service.store_conversation(project_id, "assistant", ai_response)
     
     return ChatMessageResponse(**ai_message_response.data[0])
 

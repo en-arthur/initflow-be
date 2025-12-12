@@ -313,21 +313,11 @@ async def get_sandbox(
     current_user: User = Depends(get_current_user)
 ):
     """Get sandbox information"""
-    # TODO: Implement sandbox info retrieval
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-@router.get("/preview")
-async def get_preview(
-    project_id: str,
-    current_user: User = Depends(get_current_user)
-):
-    """Get preview information"""
-    supabase = get_supabase()
+    from app.services.sandbox_service import sandbox_service
     
     # Verify project access
     project_response = supabase.table("projects")\
-        .select("user_id, status")\
+        .select("user_id")\
         .eq("id", project_id)\
         .execute()
     
@@ -337,35 +327,50 @@ async def get_preview(
             detail="Project not found"
         )
     
-    project = project_response.data[0]
-    if project["user_id"] != current_user.id:
+    if project_response.data[0]["user_id"] != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
     
-    # Check if there are any approved changes (indicates app is ready)
-    approved_changes = supabase.table("code_changes")\
-        .select("id", count="exact")\
-        .eq("tasks.project_id", project_id)\
-        .eq("approved", True)\
+    sandbox = await sandbox_service.get_sandbox(project_id)
+    
+    if not sandbox:
+        # Create sandbox if it doesn't exist
+        sandbox = await sandbox_service.create_sandbox(project_id)
+    
+    return sandbox
+
+
+@router.get("/preview")
+async def get_preview(
+    project_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get preview information"""
+    from app.services.sandbox_service import sandbox_service
+    
+    # Verify project access
+    project_response = supabase.table("projects")\
+        .select("user_id")\
+        .eq("id", project_id)\
         .execute()
     
-    has_approved_changes = approved_changes.count > 0 if approved_changes.count else False
+    if not project_response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
     
-    if has_approved_changes or project["status"] == "ready":
-        # Mock preview data - in production this would come from E2B
-        return {
-            "status": "ready",
-            "preview_url": f"https://expo.dev/@preview/{project_id}",
-            "qr_code": f"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        }
-    else:
-        return {
-            "status": "building",
-            "preview_url": None,
-            "qr_code": None
-        }
+    if project_response.data[0]["user_id"] != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    # Get preview info from sandbox service
+    preview_info = await sandbox_service.get_preview_info(project_id)
+    return preview_info
 
 
 async def process_modification_request(task_id: str, original_change: dict, feedback: str):

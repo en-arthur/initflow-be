@@ -49,10 +49,33 @@ class ProjectService:
         if not project_response.data:
             raise Exception("Failed to create project")
         
-        # Initialize spec files
-        await self._initialize_spec_files(project_id, user.id)
+        # Generate AI-powered spec files if description provided
+        if description:
+            await self._generate_ai_specs(project_id, user.id, name, description)
+        else:
+            await self._initialize_spec_files(project_id, user.id)
         
         return project_response.data[0]
+    
+    async def _generate_ai_specs(self, project_id: str, user_id: str, project_name: str, description: str):
+        """Generate AI-powered specification files"""
+        from app.services.spec_generator import spec_generator
+        
+        # Generate specs using AI
+        specs = await spec_generator.generate_specs_from_prompt(description, project_name)
+        
+        # Create spec files with generated content
+        for spec_type, content in specs.items():
+            spec_id = str(uuid.uuid4())
+            spec_data = {
+                "id": spec_id,
+                "project_id": project_id,
+                "file_type": spec_type,
+                "content": content,
+                "version": 1,
+                "created_by": user_id,
+            }
+            self.supabase.table("spec_files").insert(spec_data).execute()
     
     async def _initialize_spec_files(self, project_id: str, user_id: str):
         """Initialize the three spec files for a new project"""
