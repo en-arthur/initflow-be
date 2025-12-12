@@ -68,7 +68,8 @@ async def create_project(
     project_data_dict = await project_service.create_project(
         current_user, 
         project_data.name, 
-        project_data.description
+        project_data.description,
+        project_data.include_backend
     )
     
     return Project(**project_data_dict)

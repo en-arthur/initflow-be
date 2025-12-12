@@ -59,6 +59,7 @@ class UserLogin(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    include_backend: bool = False
 
 
 class ProjectUpdate(BaseModel):

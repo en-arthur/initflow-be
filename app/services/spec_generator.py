@@ -32,6 +32,14 @@ class SpecGeneratorService:
         """Analyze user prompt to extract key features and requirements"""
         prompt_lower = prompt.lower()
         
+        # Detect if backend is needed
+        backend_indicators = [
+            "database", "api", "server", "backend", "auth", "login", "signup", 
+            "save", "store", "sync", "user", "account", "payment", "real-time",
+            "notification", "chat", "messaging", "social", "admin", "dashboard"
+        ]
+        needs_backend = any(indicator in prompt_lower for indicator in backend_indicators)
+        
         # Detect app type
         app_types = {
             "social": ["social", "chat", "messaging", "friends", "posts", "feed"],
@@ -56,13 +64,16 @@ class SpecGeneratorService:
             "authentication": ["login", "signup", "auth", "user", "account"],
             "database": ["save", "store", "data", "database", "persist"],
             "api": ["api", "server", "backend", "fetch", "request"],
+            "realtime": ["real-time", "live", "instant", "chat", "messaging"],
             "navigation": ["screen", "page", "navigate", "route", "tab"],
             "notifications": ["notify", "alert", "push", "notification"],
             "camera": ["camera", "photo", "image", "picture"],
             "location": ["location", "map", "gps", "address"],
             "payment": ["pay", "payment", "stripe", "purchase", "buy"],
             "social": ["share", "social", "facebook", "twitter", "instagram"],
-            "offline": ["offline", "sync", "cache", "local"]
+            "offline": ["offline", "sync", "cache", "local"],
+            "admin": ["admin", "dashboard", "management", "control"],
+            "analytics": ["analytics", "tracking", "metrics", "stats"]
         }
         
         for feature, keywords in feature_keywords.items():
@@ -76,6 +87,7 @@ class SpecGeneratorService:
             "app_type": detected_type,
             "features": features,
             "entities": entities,
+            "needs_backend": needs_backend,
             "original_prompt": prompt
         }
     
