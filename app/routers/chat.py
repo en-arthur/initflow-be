@@ -58,6 +58,7 @@ async def send_message(
     from app.services.ai_service import ai_service
     
     # Get project context for AI
+    project_info, recent_memory, spec_context = await get_project_context(project_id)
     project_context = {
         "project_info": project_info,
         "recent_memory": recent_memory[:5],  # Last 5 memory items
@@ -68,7 +69,8 @@ async def send_message(
         current_user, 
         message.message, 
         context=project_context,
-        system_prompt="You are an expert mobile app development assistant specializing in React Native and Expo."
+        system_prompt="You are an expert mobile app development assistant specializing in React Native and Expo.",
+        project_id=project_id
     )
     
     # Store AI message
@@ -123,6 +125,26 @@ async def get_chat_history(
         .execute()
     
     return [ChatMessageResponse(**msg) for msg in messages_response.data]
+
+
+async def get_project_context(project_id: str):
+    """Get project context for AI"""
+    from app.services.memory_service import memory_service
+    
+    supabase = get_supabase()
+    
+    # Get project info
+    project = supabase.table("projects").select("name, description").eq("id", project_id).execute()
+    project_info = project.data[0] if project.data else {}
+    
+    # Get recent memory for context
+    recent_memory = await memory_service.get_project_memory(project_id)
+    
+    # Get spec files for context
+    specs = supabase.table("spec_files").select("file_type, content").eq("project_id", project_id).execute()
+    spec_context = {spec["file_type"]: spec["content"][:500] + "..." for spec in specs.data}
+    
+    return project_info, recent_memory, spec_context
 
 
 async def generate_ai_response(user_message: str, project_id: str) -> str:

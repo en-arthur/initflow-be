@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # AI Configuration
     google_api_key: str = ""
-    ollama_host: str = "http://localhost:11434"
+    deepseek_api_key: str = ""
     
     # E2B
     e2b_api_key: str = ""

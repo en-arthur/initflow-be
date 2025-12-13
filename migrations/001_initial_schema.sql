@@ -105,21 +105,21 @@ CREATE TABLE memory_items (
 -- Create index for vector similarity search
 CREATE INDEX ON memory_items USING ivfflat (embedding vector_cosine_ops);
 
--- Marketplace components table
-CREATE TABLE marketplace_components (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    category VARCHAR(100) NOT NULL,
-    tags TEXT[],
-    preview_url VARCHAR(500),
-    spec_template JSONB NOT NULL,
-    code_template JSONB NOT NULL,
-    dependencies TEXT[],
-    downloads INTEGER DEFAULT 0,
-    rating DECIMAL(3,2) DEFAULT 0.0,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+-- Marketplace components table (disabled for now)
+-- CREATE TABLE marketplace_components (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     name VARCHAR(255) NOT NULL,
+--     description TEXT,
+--     category VARCHAR(100) NOT NULL,
+--     tags TEXT[],
+--     preview_url VARCHAR(500),
+--     spec_template JSONB NOT NULL,
+--     code_template JSONB NOT NULL,
+--     dependencies TEXT[],
+--     downloads INTEGER DEFAULT 0,
+--     rating DECIMAL(3,2) DEFAULT 0.0,
+--     created_at TIMESTAMP DEFAULT NOW()
+-- );
 
 -- Build jobs table
 CREATE TABLE build_jobs (

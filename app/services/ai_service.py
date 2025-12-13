@@ -6,7 +6,7 @@ from app.models import User
 from app.config import settings
 import os
 from agno import Agent, Workflow, Task
-from agno.models import Ollama, Gemini
+from agno.models import OpenAI, Gemini
 import json
 
 
@@ -16,10 +16,11 @@ class AIService:
     def __init__(self):
         # Initialize Agno models based on tier
         self.models = {
-            "free": Ollama(
-                model="llama3", 
-                max_tokens=2048,
-                host=settings.ollama_host
+            "free": OpenAI(
+                model="deepseek-chat",
+                api_key=settings.deepseek_api_key,
+                base_url="https://api.deepseek.com/v1",
+                max_tokens=2048
             ),
             "pro": Gemini(
                 model="gemini-2.5", 
@@ -93,20 +94,40 @@ class AIService:
         user: User, 
         prompt: str, 
         context: Optional[Dict] = None,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        project_id: Optional[str] = None
     ) -> str:
-        """Generate AI response using Agno chat agent"""
+        """Generate AI response using Agno chat agent with memory"""
         model = self.models.get(user.tier, self.models["free"])
         self.chat_agent.llm = model
         
+        # Get relevant memory context if project_id is provided
+        memory_context = ""
+        if project_id:
+            from app.services.memory_service import memory_service
+            memory_context = await memory_service.get_relevant_context(
+                project_id, prompt, context_type=None
+            )
+        
         # Create context-aware prompt
         full_prompt = prompt
+        
+        # Add memory context
+        if memory_context:
+            full_prompt = f"Relevant Context from Project Memory:\n{memory_context}\n\nUser Request: {prompt}"
+        
+        # Add additional context
         if context:
             context_str = f"Project Context: {json.dumps(context, indent=2)}\n\n"
-            full_prompt = context_str + prompt
+            full_prompt = context_str + full_prompt
         
         if system_prompt:
             full_prompt = f"System: {system_prompt}\n\nUser: {full_prompt}"
+        
+        # Set memory for the agent if project_id is available
+        if project_id:
+            # Configure agent to use Agno memory
+            self.chat_agent.memory = self._get_agent_memory(project_id)
         
         # Create and execute task
         task = Task(
@@ -123,6 +144,13 @@ class AIService:
         )
         
         result = workflow.kickoff()
+        
+        # Store the interaction in memory
+        if project_id:
+            from app.services.memory_service import memory_service
+            await memory_service.store_conversation(project_id, "user", prompt)
+            await memory_service.store_conversation(project_id, "assistant", result)
+        
         return result
     
     async def generate_code(
@@ -344,6 +372,19 @@ Provide complete test files with proper setup, teardown, and assertions."""
             return formatted_results
         
         return []
+    
+    def _get_agent_memory(self, project_id: str):
+        """Get Agno memory instance for an agent"""
+        from agno.memory import Memory
+        
+        # Return project-specific memory instance
+        return Memory(
+            memory_id=f"agent_{project_id}",
+            storage_backend="supabase",
+            embedding_model="text-embedding-ada-002",
+            max_memory_items=500,
+            similarity_threshold=0.7
+        )
 
 
 # Singleton instance

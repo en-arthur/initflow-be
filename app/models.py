@@ -98,8 +98,9 @@ class ChatMessage(BaseModel):
     message: str
 
 
-class ComponentIntegration(BaseModel):
-    component_id: str
+# ComponentIntegration model disabled for now
+# class ComponentIntegration(BaseModel):
+#     component_id: str
 
 
 class SubscriptionUpgrade(BaseModel):
@@ -205,19 +206,20 @@ class ChatMessageResponse(BaseModel):
     attachments: Optional[List[Dict[str, Any]]]
 
 
-class MarketplaceComponent(BaseModel):
-    id: str
-    name: str
-    description: str
-    category: str
-    tags: List[str]
-    preview_url: Optional[str]
-    spec_template: Dict[str, Any]
-    code_template: Dict[str, Any]
-    dependencies: List[str]
-    downloads: int
-    rating: float
-    created_at: datetime
+# MarketplaceComponent model disabled for now
+# class MarketplaceComponent(BaseModel):
+#     id: str
+#     name: str
+#     description: str
+#     category: str
+#     tags: List[str]
+#     preview_url: Optional[str]
+#     spec_template: Dict[str, Any]
+#     code_template: Dict[str, Any]
+#     dependencies: List[str]
+#     downloads: int
+#     rating: float
+#     created_at: datetime
 
 
 class BuildJob(BaseModel):
